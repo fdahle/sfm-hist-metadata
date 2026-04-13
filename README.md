@@ -1,4 +1,7 @@
-# Historical Meta-Data Extraction
+# SfM-Hist: Metadata Extraction
+
+> Part of the **SfM-Hist** suite for automated 3D reconstruction from historical imagery.<br>
+> See also: [Segmentation](https://github.com/fdahle/sfm-hist-segmentation) | [Geo-referencing](https://github.com/fdahle/sfm-hist-georef)
 
 Code for the publication **"From Film to Data: Automating Meta-Feature Extraction in Historical Aerial Imagery"**.
 
