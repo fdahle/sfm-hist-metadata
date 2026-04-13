@@ -3,11 +3,7 @@
 # Library imports
 import copy
 import pandas as pd
-import psycopg2
 from typing import Optional, Union
-
-# Local imports
-import src.base.connect_to_database as ctd
 
 # Constants
 MIN_NR_OF_IMAGES = 3
@@ -17,7 +13,6 @@ MAX_STD = 0.005
 def estimate_cam_id(image_id: str,
                     use_estimated: bool = False, return_data: bool = False,
                     cam_id_data: Optional[pd.DataFrame] = None,
-                    conn: Optional[psycopg2.extensions.connection] = None
                     ) -> Union[None, tuple[None, None], float,
                                tuple[str, Optional[pd.DataFrame]]]:
     """
@@ -26,9 +21,8 @@ def estimate_cam_id(image_id: str,
         image_id (str): The ID of the image for which the cam id is to be estimated.
         use_estimated (bool): Flag to include estimated cam ids in the analysis.
         return_data (bool): Flag to return the original cam id data.
-        cam_id_data (Optional[pd.DataFrame]): Pre-loaded cam id data for images with
-            similar properties.
-        conn (Optional[Connection]): Database connection object.
+        cam_id_data (pd.DataFrame): DataFrame with columns 'image_id', 'cam_id', and
+            'cam_id_estimated' for images with similar properties.
     Returns:
         float: A string containing the estimated cam id.
             This return type is provided when `return_data` is False.
@@ -38,35 +32,11 @@ def estimate_cam_id(image_id: str,
             deviation are not met.
     """
 
-    # establish connection to psql if not provided
-    if conn is None:
-        conn = ctd.establish_connection()
-
     if cam_id_data is None:
-        # get the properties of this image (flight path, etc.)
-        sql_string = f"SELECT tma_number, view_direction FROM images WHERE image_id='{image_id}'"
-        data_img_props = ctd.execute_sql(sql_string, conn)
-
-        # get the attribute values for this image
-        tma_number = data_img_props["tma_number"].iloc[0]
-        view_direction = data_img_props["view_direction"].iloc[0]
-
-        # get the images with the same properties
-        sql_string = f"SELECT image_id FROM images WHERE tma_number={tma_number} AND " \
-                     f"view_direction='{view_direction}'"
-        data_ids = ctd.execute_sql(sql_string, conn)
-
-        # convert to list and flatten
-        data_ids = data_ids.values.tolist()
-        data_ids = [item for sublist in data_ids for item in sublist]  # noqa
-
-        # convert list to a string
-        str_data_ids = "('" + "', '".join(data_ids) + "')"
-
-        # get all entries from the same flight and the same viewing direction
-        sql_string = f"SELECT image_id, cam_id, cam_id_estimated " \
-                     f"FROM images_extracted WHERE image_id IN {str_data_ids}"
-        cam_id_data = ctd.execute_sql(sql_string, conn)
+        raise ValueError(
+            "cam_id_data must be provided as a DataFrame with columns "
+            "'image_id', 'cam_id', and 'cam_id_estimated'."
+        )
 
     # create a copy for the return
     orig_cam_id_data = copy.deepcopy(cam_id_data)

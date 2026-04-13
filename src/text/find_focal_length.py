@@ -45,19 +45,18 @@ def find_focal_length(text: str, method="numeric") -> Optional[float]:
 
 
         candidates = re.findall(pattern, text_part)
-        print(candidates)
         for val in candidates:
             if method == "numeric":
-                if val is not None and val < 100:
-                    val += 100
-                if val is not None and MIN_FOCAL_LENGTH <= val <= MAX_FOCAL_LENGTH:
-                    all_matches.append(val)
+                numeric_val = float(val)
+                if numeric_val < 100:
+                    numeric_val += 100
+                if MIN_FOCAL_LENGTH <= numeric_val <= MAX_FOCAL_LENGTH:
+                    all_matches.append(numeric_val)
             elif method == "text":
-                # Require at least 3 digit characters in the candidate
+                # Require at least 4 digit characters in the candidate
                 digit_count = sum(c.isdigit() for c in val.replace('.', ''))
                 if digit_count >= 4:
                     all_matches.append(val)
-
     # check if the correct number of matches is found
     if len(all_matches) == 1:
 
@@ -77,7 +76,6 @@ def find_focal_length(text: str, method="numeric") -> Optional[float]:
             # if all matches are identical, just keep the first one
             if len(set(all_matches)) == 1:
                 all_matches = [all_matches[0]]
-            print(all_matches)
             focal_length = all_matches[0]
 
             if '.' not in focal_length:

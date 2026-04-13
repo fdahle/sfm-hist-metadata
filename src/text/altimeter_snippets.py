@@ -405,7 +405,6 @@ def intersection_of_lines(line1: tuple[int, int, int, int],
                                                  Returns (None, None) if lines are parallel or identical.
     """
 
-    # ch
     x1, y1, x2, y2 = line1
     x3, y3, x4, y4 = line2
 

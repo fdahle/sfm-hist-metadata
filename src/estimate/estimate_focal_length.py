@@ -3,11 +3,7 @@
 # Library imports
 import copy
 import pandas as pd
-import psycopg2
 from typing import Optional, Union
-
-# Local imports
-import src.base.connect_to_database as ctd
 
 # Constants
 MIN_NR_OF_IMAGES = 3
@@ -17,7 +13,6 @@ MAX_STD = 0.005
 def estimate_focal_length(image_id: str,
                           use_estimated: bool = False, return_data: bool = False,
                           focal_length_data: Optional[pd.DataFrame] = None,
-                          conn: Optional[psycopg2.extensions.connection] = None
                           ) -> Union[None, tuple[None, None], float,
                                      tuple[float, Optional[pd.DataFrame]]]:
     """
@@ -26,8 +21,8 @@ def estimate_focal_length(image_id: str,
         image_id (str): The ID of the image for which the focal length is to be estimated.
         use_estimated (bool): Flag to include estimated focal lengths in the analysis.
         return_data (bool): Flag to return the original focal length data.
-        focal_length_data (Optional[pd.DataFrame]): Pre-loaded focal length data for images with similar properties.
-        conn (Optional[Connection]): Database connection object.
+        focal_length_data (pd.DataFrame): DataFrame with columns 'image_id', 'focal_length',
+            and 'focal_length_estimated' for images with similar properties.
     Returns:
         float: A float values containing the estimated focal length.
             This return type is provided when `return_data` is False.
@@ -36,37 +31,11 @@ def estimate_focal_length(image_id: str,
         None: Returns None if conditions like minimum number of images or maximum standard deviation are not met.
     """
 
-    # establish connection to psql if not provided
-    if conn is None:
-        conn = ctd.establish_connection()
-
     if focal_length_data is None:
-
-        # get the properties of this image (flight path, etc.)
-        sql_string = f"SELECT tma_number, view_direction, cam_id FROM images WHERE image_id='{image_id}'"
-        data_img_props = ctd.execute_sql(sql_string, conn)
-
-        # get the attribute values for this image
-        tma_number = data_img_props["tma_number"].iloc[0]
-        view_direction = data_img_props["view_direction"].iloc[0]
-        cam_id = data_img_props["cam_id"].iloc[0]
-
-        # get the images with the same properties
-        sql_string = f"SELECT image_id FROM images WHERE tma_number={tma_number} AND " \
-                     f"view_direction='{view_direction}' AND cam_id={cam_id}"
-        data_ids = ctd.execute_sql(sql_string, conn)
-
-        # convert to list and flatten
-        data_ids = data_ids.values.tolist()
-        data_ids = [item for sublist in data_ids for item in sublist]  # noqa
-
-        # convert list to a string
-        str_data_ids = "('" + "', '".join(data_ids) + "')"
-
-        # get all entries from the same flight and the same viewing direction
-        sql_string = f"SELECT image_id, focal_length, focal_length_estimated " \
-                     f"FROM images_extracted WHERE image_id IN {str_data_ids}"
-        focal_length_data = ctd.execute_sql(sql_string, conn)
+        raise ValueError(
+            "focal_length_data must be provided as a DataFrame with columns "
+            "'image_id', 'focal_length', and 'focal_length_estimated'."
+        )
 
     # create a copy for the return
     orig_focal_length_data = copy.deepcopy(focal_length_data)

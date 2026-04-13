@@ -123,7 +123,7 @@ def extract_altimeter(image: np.ndarray,
     # remove short lines
     lines = snippets.delete_short_lines(lines, 20)
 
-    if lines is None:
+    if len(lines) == 0:
         if debug_print:
             print("No lines left after deletion of short lines")
         return None if not return_position else (None, bounding_box)
@@ -254,7 +254,7 @@ def _locate_circle(altimeter: np.ndarray) -> tuple[Optional[tuple[int, int, int]
     # set kernel for erode and dilate
     kernel = np.ones((3, 3), np.uint8)
 
-    for min_th in range(MIN_BINARY_THRESHOLD, 250, 5):
+    for min_th in range(MIN_BINARY_THRESHOLD, 250, 5):  # noqa: SIM113
 
         # get threshold for conversion to binary image
         ret, o1 = cv2.threshold(altimeter, min_th, 255, cv2.THRESH_BINARY)
@@ -299,8 +299,8 @@ def _locate_circle(altimeter: np.ndarray) -> tuple[Optional[tuple[int, int, int]
             circle = (
                 int(mid_p[0] + np.cos(18 * np.pi / 180) * 205), int(mid_p[1] + np.sin(18 * np.pi / 180) * 205), r)
         else:
-            # no circle could be located
-            return None, None
+            # no circle could be located for this threshold, try next
+            continue
 
         return circle, min_th
 
@@ -502,6 +502,7 @@ def _lines2height(lines_tip: list[tuple[int, int, int, int]],
     print(lines_parallel)
 
     # get middle line of long
+    middle_line_long = None
     if len(lines_parallel) == 2:
         mid_x = int((lines_parallel[0][0] + lines_parallel[1][0]) / 2)
         mid_y = int((lines_parallel[0][1] + lines_parallel[1][1]) / 2)
@@ -512,12 +513,11 @@ def _lines2height(lines_tip: list[tuple[int, int, int, int]],
     reading_short = int(10000 / (2 * np.pi) * middle_angle_short / 1000) * 1000  # only need to know how many thousands
 
     # get height value for long pointer
-    if len(lines_parallel) == 2:
+    if middle_line_long is not None:
         middle_angle_long = snippets.get_angle(middle_line_long)
         reading_long = int(1000 / (2 * np.pi) * middle_angle_long / 100) * 100
     else:
         reading_long = 0
-        middle_line_long = None
 
     height = 10000 + reading_short + reading_long
 

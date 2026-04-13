@@ -15,8 +15,8 @@ FID_TYPE = 1
 CROP_FACTOR = 0.1
 
 
-DEBUG_SHOW_CROP = True
-DEBUG_SHOW_MULTI_DETECTIONS = True
+DEBUG_SHOW_CROP = False
+DEBUG_SHOW_MULTI_DETECTIONS = False
 
 def extract_subset(image: np.ndarray, key: str,
                    detector_path: Optional[str] = None, model_name: Optional[str] = None,
@@ -111,7 +111,6 @@ def extract_subset(image: np.ndarray, key: str,
     # get difference in x and y for crop and resized crop
     y_scale = orig_shape[0] / crop.shape[0]
     x_scale = orig_shape[1] / crop.shape[1]
-    catch = False
 
     if DEBUG_SHOW_CROP:
         di.display_images([crop])

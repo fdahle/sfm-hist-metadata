@@ -3,11 +3,7 @@
 # Library imports
 import copy
 import pandas as pd
-import psycopg2
 from typing import Optional, Union
-
-# Local imports
-import src.base.connect_to_database as ctd
 
 # Constants
 MIN_NR_OF_IMAGES = 3
@@ -17,7 +13,6 @@ MAX_STD = None
 def estimate_height(image_id: str,
                     use_estimated: bool = False, return_data: bool = False,
                     height_data: Optional[pd.DataFrame] = None,
-                    conn: Optional[psycopg2.extensions.connection] = None
                     ) -> Union[None, tuple[None, None], float,
                                tuple[float, Optional[pd.DataFrame]]]:
     """
@@ -26,8 +21,8 @@ def estimate_height(image_id: str,
         image_id (str): The ID of the image for which the height is to be estimated.
         use_estimated (bool): Flag to include estimated heights in the analysis.
         return_data (bool): Flag to return the original height data.
-        height_data (Optional[pd.DataFrame]): Pre-loaded height data for images with similar properties.
-        conn (Optional[Connection]): Database connection object.
+        height_data (pd.DataFrame): DataFrame with columns 'image_id', 'height', and
+            'height_estimated' for images with similar properties.
     Returns:
         float: A float values containing the estimated height.
             This return type is provided when `return_data` is False.
@@ -36,36 +31,11 @@ def estimate_height(image_id: str,
         None: Returns None if conditions like minimum number of images or maximum standard deviation are not met.
     """
 
-    # establish connection to psql if not already done
-    if conn is None:
-        conn = ctd.establish_connection()
-
-    # we only need to get data when it is not provided
     if height_data is None:
-
-        # get the properties of this image
-        sql_string = f"SELECT tma_number FROM images WHERE image_id='{image_id}'"
-        data_img_props = ctd.execute_sql(sql_string, conn)
-
-        # get the attribute values for this image
-        tma_number = data_img_props["tma_number"].iloc[0]
-
-        # get the images with the same properties
-        sql_string = f"SELECT image_id FROM images WHERE tma_number={tma_number}"
-        data_ids = ctd.execute_sql(sql_string, conn)
-
-        # convert to list and flatten
-        data_ids = data_ids.values.tolist()
-        data_ids = [item for sublist in data_ids for item in sublist]  # noqa
-
-        # convert list to a string
-        str_data_ids = "('" + "', '".join(data_ids) + "')"
-
-        # get all entries from the same flight and the same viewing direction
-        sql_string = f"SELECT image_id, " \
-                     f"height, height_estimated " \
-                     f"FROM images_extracted WHERE image_id IN {str_data_ids}"
-        height_data = ctd.execute_sql(sql_string, conn)
+        raise ValueError(
+            "height_data must be provided as a DataFrame with columns "
+            "'image_id', 'height', and 'height_estimated'."
+        )
 
     # create a copy for the return
     orig_height_data = copy.deepcopy(height_data)
@@ -101,7 +71,7 @@ def estimate_height(image_id: str,
         if std > MAX_STD:
             return None
 
-    # get the mean value
+    # get the median value
     median_val = height_data['height'].median()
 
     # round the mean value

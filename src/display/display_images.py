@@ -136,6 +136,8 @@ def display_images(images: np.ndarray | list[np.ndarray],
         img_min_vals = [dem_min] * len(images)
         img_max_vals = [dem_max] * len(images)
     if separate_min_max:
+        if image_types is None:
+            raise ValueError("image_types must be provided when separate_min_max is True.")
         img_min_vals = []
         img_max_vals = []
         for img, img_type in zip(images, image_types):
